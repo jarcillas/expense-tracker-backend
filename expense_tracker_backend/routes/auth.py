@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from ..schemas import Token, UserCreate, User
-from ..crud import get_user_by_email, get_user_by_username, create_user
+from ..crud import get_user_by_username, create_user
 from ..auth import create_access_token
 from passlib.context import CryptContext
 
@@ -26,26 +26,11 @@ def verify_password(plain_password, hashed_password):
 
 @router.post("/register", response_model=User)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    # Check if username already exists
-    db_user = get_user_by_username(db, username=user.username)
-    print(db_user)
-    if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered",
-        )
-
-    # Check if email already exists
-    db_user_by_email = get_user_by_email(db, email=user.email)
-    print(db_user_by_email)
-    if db_user_by_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
-        )
-
     # Create the user
-    return create_user(db, user)
+    try:
+        return create_user(db, user)
+    except HTTPException as e:
+        raise e
 
 
 @router.post("/token", response_model=Token)

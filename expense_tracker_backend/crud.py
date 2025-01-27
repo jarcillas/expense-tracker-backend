@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from .models import Expense, User
 from .schemas import ExpenseCreate, UserCreate
@@ -8,6 +9,24 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_user(db: Session, user: UserCreate) -> User:
+    # Check if username already exists
+    db_user_username_exists = get_user_by_username(db, username=user.username)
+    print(db_user_username_exists)
+    if db_user_username_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered",
+        )
+
+    # Check if email already exists
+    db_user_email_exists = get_user_by_email(db, email=user.email)
+    print(db_user_email_exists)
+    if db_user_email_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
     hashed_password = pwd_context.hash(user.password)
     db_user = User(
         username=user.username,
