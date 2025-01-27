@@ -44,3 +44,10 @@ def get_user_by_username(db: Session, username: str | None) -> User | None:
     Fetch a user from the database by their username.
     """
     return db.query(User).filter(User.username == username).first()
+
+
+def get_user_by_email(db: Session, email: str | None) -> User | None:
+    """
+    Fetch a user from the database by their email.
+    """
+    return db.query(User).filter(User.email == email).first()
