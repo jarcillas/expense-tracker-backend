@@ -59,6 +59,10 @@ class ExpenseCreate(ExpenseBase):
     pass
 
 
+class ExpenseDelete(ExpenseBase):
+    pass
+
+
 class Expense(ExpenseBase):
     id: int
     owner_id: int
@@ -74,6 +78,10 @@ class ExpenseOut(Expense):
 
 class UserWithExpenses(User):
     expenses: List[ExpenseOut] = []
+
+
+class TotalExpensesOut(BaseModel):
+    total_expenses: float
 
 
 # Pagination schema
