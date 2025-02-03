@@ -11,6 +11,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Create new user
 def create_user(db: Session, user: UserCreate) -> User:
+    """
+    Creates a new user with a given username, email, and password
+    """
+
     # Check if username already exists
     db_user_username_exists = get_user_by_username(db, username=user.username)
     print(db_user_username_exists)
@@ -43,6 +47,10 @@ def create_user(db: Session, user: UserCreate) -> User:
 
 
 def create_expense(db: Session, expense: ExpenseCreate, user_id: int):
+    """
+    Creates a new expense with a description, category, and amount
+    """
+
     db_expense = Expense(**expense.model_dump(), owner_id=user_id)
     db.add(db_expense)
     db.commit()
@@ -51,6 +59,10 @@ def create_expense(db: Session, expense: ExpenseCreate, user_id: int):
 
 
 def get_expenses(db: Session, user_id: int, skip: int = 0, limit: int = 10):
+    """
+    Fetches all the expenses of the current user
+    """
+
     return (
         db.query(Expense)
         .filter(Expense.owner_id == user_id)
@@ -61,6 +73,10 @@ def get_expenses(db: Session, user_id: int, skip: int = 0, limit: int = 10):
 
 
 def get_total_expenses(db: Session, user_id: int):
+    """
+    Fetches the total amount of expenses of the current user
+    """
+
     total = (
         db.query(func.sum(Expense.amount)).filter(Expense.owner_id == user_id).scalar()
     )
@@ -98,4 +114,8 @@ def get_user_by_email(db: Session, email: str | None) -> User | None:
 
 
 def get_categories(db: Session):
+    """
+    Fetches all the categories
+    """
+
     return db.query(Category).all()
