@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
-from datetime import date
 from typing import Optional, List
+from datetime import date
 
 
 # Base schemas
@@ -57,6 +57,12 @@ class ExpenseBase(BaseModel):
 
 class ExpenseCreate(ExpenseBase):
     pass
+
+
+class ExpenseUpdate(BaseModel):
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    category_id: Optional[int] = None
 
 
 class ExpenseDelete(ExpenseBase):

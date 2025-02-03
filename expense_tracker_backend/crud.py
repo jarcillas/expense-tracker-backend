@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from .models import Category, Expense, User
-from .schemas import ExpenseCreate, UserCreate
+from .schemas import ExpenseCreate, UserCreate, ExpenseUpdate
 from passlib.context import CryptContext
 
 # Password hashing
@@ -11,6 +11,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Create new user
 def create_user(db: Session, user: UserCreate) -> User:
+    """
+    Creates a new user with a given username, email, and password
+    """
+
     # Check if username already exists
     db_user_username_exists = get_user_by_username(db, username=user.username)
     print(db_user_username_exists)
@@ -43,6 +47,10 @@ def create_user(db: Session, user: UserCreate) -> User:
 
 
 def create_expense(db: Session, expense: ExpenseCreate, user_id: int):
+    """
+    Creates a new expense with a description, category, and amount
+    """
+
     db_expense = Expense(**expense.model_dump(), owner_id=user_id)
     db.add(db_expense)
     db.commit()
@@ -51,6 +59,10 @@ def create_expense(db: Session, expense: ExpenseCreate, user_id: int):
 
 
 def get_expenses(db: Session, user_id: int, skip: int = 0, limit: int = 10):
+    """
+    Fetches all the expenses of the current user
+    """
+
     return (
         db.query(Expense)
         .filter(Expense.owner_id == user_id)
@@ -60,11 +72,40 @@ def get_expenses(db: Session, user_id: int, skip: int = 0, limit: int = 10):
     )
 
 
-def get_total_expenses(db: Session, user_id: int):
+def get_total_expenses(db: Session, user_id: int) -> float:
+    """
+    Fetches the total amount of expenses of the current user
+    """
+
     total = (
         db.query(func.sum(Expense.amount)).filter(Expense.owner_id == user_id).scalar()
     )
     return total or 0.0
+
+
+def update_expense(
+    db: Session, expense_id: int, owner_id: int, expense: ExpenseUpdate
+) -> Expense | None:
+    """
+    Update an expense by its ID, ensuring it belongs to the specified owner.
+    """
+    db_expense = (
+        db.query(Expense)
+        .filter(Expense.id == expense_id, Expense.owner_id == owner_id)
+        .first()
+    )
+    if not db_expense:
+        return None  # Expense not found or does not belong to the user
+
+    # Update the expense fields
+    for i in ("description", "amount", "category_id"):
+        val = getattr(expense, i)
+        if val is not None:
+            setattr(db_expense, i, val)
+
+    db.commit()
+    db.refresh(db_expense)
+    return db_expense
 
 
 def delete_expense(db: Session, expense_id: int, owner_id: int):
@@ -98,4 +139,8 @@ def get_user_by_email(db: Session, email: str | None) -> User | None:
 
 
 def get_categories(db: Session):
+    """
+    Fetches all the categories
+    """
+
     return db.query(Category).all()
