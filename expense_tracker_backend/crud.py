@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from .models import Expense, User
+from sqlalchemy import func
+from .models import Category, Expense, User
 from .schemas import ExpenseCreate, UserCreate
 from passlib.context import CryptContext
 
@@ -8,6 +9,7 @@ from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+# Create new user
 def create_user(db: Session, user: UserCreate) -> User:
     # Check if username already exists
     db_user_username_exists = get_user_by_username(db, username=user.username)
@@ -58,6 +60,29 @@ def get_expenses(db: Session, user_id: int, skip: int = 0, limit: int = 10):
     )
 
 
+def get_total_expenses(db: Session, user_id: int):
+    total = (
+        db.query(func.sum(Expense.amount)).filter(Expense.owner_id == user_id).scalar()
+    )
+    return total or 0.0
+
+
+def delete_expense(db: Session, expense_id: int, owner_id: int):
+    """
+    Delete an expense by its ID, ensuring it belongs to the specific user
+    """
+    db_expense = (
+        db.query(Expense)
+        .filter(Expense.id == expense_id, Expense.owner_id == owner_id)
+        .first()
+    )
+    if not db_expense:
+        return False
+    db.delete(db_expense)
+    db.commit()
+    return True
+
+
 def get_user_by_username(db: Session, username: str | None) -> User | None:
     """
     Fetch a user from the database by their username.
@@ -70,3 +95,7 @@ def get_user_by_email(db: Session, email: str | None) -> User | None:
     Fetch a user from the database by their email.
     """
     return db.query(User).filter(User.email == email).first()
+
+
+def get_categories(db: Session):
+    return db.query(Category).all()
