@@ -1,13 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import SessionLocal
-from ..schemas import Category, ExpenseCreate, ExpenseOut, TotalExpensesOut
+from ..schemas import (
+    Category,
+    ExpenseCreate,
+    ExpenseOut,
+    ExpenseUpdate,
+    TotalExpensesOut,
+)
 from ..crud import (
     create_expense,
     get_categories,
     get_expenses,
     get_total_expenses,
     delete_expense,
+    update_expense,
 )
 from ..auth import get_current_user
 from ..models import User
@@ -53,6 +60,22 @@ def get_total(
 @router.get("/category/", response_model=list[Category])
 def get_all_categories(db: Session = Depends(get_db)):
     return get_categories(db)
+
+
+@router.put("/expenses/{expense_id}", response_model=ExpenseOut)
+def update_user_expense(
+    expense_id: int,
+    expense: ExpenseUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    db_expense = update_expense(db, expense_id, current_user.id, expense)
+    if not db_expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found or does not belong to the user",
+        )
+    return db_expense
 
 
 @router.delete("/expense/{expense_id}")
